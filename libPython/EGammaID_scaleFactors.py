@@ -4,6 +4,7 @@ import sys,os
 from math import sqrt
 import ROOT as rt
 import CMS_lumi, tdrstyle
+import json
 
 from efficiencyUtils import efficiency
 from efficiencyUtils import efficiencyList
@@ -283,6 +284,29 @@ def diagnosticErrorPlot( effgr, ierror, nameout ):
         c2D_Err.SaveAs(nameout.replace('egammaEffi.txt_egammaPlots',listName[-6].replace('tnp','')+'_SF2D'+'_'+errorNames[ierror]+listName[-3]).replace('pdf',iext))
 
 
+def getSFListInJSON( sfList, nameout ):
+    
+    ID = {}
+    pt = {}
+    for key in sorted(sfList.keys()):
+        eta = {}
+        for d in sfList[key]:           
+            valerr = {}
+            valerr["value"] = d['val']
+            valerr["error"] = d['err']
+            eta_range = "eta:["+str(d['min'])+","+str(d['max'])+"]"
+            eta[eta_range] = valerr  
+                  
+        pt_range = "pt:["+str(key[0])+","+str(key[1])+"]"
+        pt[pt_range] = eta
+
+    listName = nameout.split('/')
+    id_name = listName[-3].replace('passing','')
+    ID[id_name] = pt  
+    with open(nameout.replace('egammaEffi.txt',id_name+'.json'),'w') as f:
+        json.dump(ID, f, sort_keys = False, indent = 4)
+
+
 def doEGM_SFs(filein, lumi, axis = ['pT','eta'] ):
     print " Opening file: %s (plot lumi: %3.1f)" % ( filein, lumi )
     CMS_lumi.lumi_13TeV = "%+3.1f fb^{-1}" % lumi 
@@ -345,6 +369,8 @@ def doEGM_SFs(filein, lumi, axis = ['pT','eta'] ):
                               effGraph.eta_1DGraph_list( typeGR = +1 ) , # SF
                               pdfout, 
                               xAxis = axis[1], yAxis = axis[0] )
+
+    getSFListInJSON(effGraph.eta_1DGraph_list( typeGR = +1 ),nameOutBase)    
 
     h2EffData = effGraph.ptEtaScaleFactor_2DHisto(-3)
     h2EffMC   = effGraph.ptEtaScaleFactor_2DHisto(-2)
