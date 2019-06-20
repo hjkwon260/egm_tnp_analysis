@@ -4,6 +4,7 @@ import sys,os
 from math import sqrt
 import ROOT as rt
 import CMS_lumi, tdrstyle
+from flagtoVID import flagtoVID
 import json
 
 from efficiencyUtils import efficiency
@@ -301,7 +302,7 @@ def getSFListInJSON( sfList, nameout ):
         pt[pt_range] = eta
 
     listName = nameout.split('/')
-    id_name = listName[-3].replace('passing','')
+    id_name = flagtoVID(listName[-3])
     ID[id_name] = pt  
     with open(nameout.replace('egammaEffi.txt',id_name+'.json'),'w') as f:
         json.dump(ID, f, sort_keys = False, indent = 4)
