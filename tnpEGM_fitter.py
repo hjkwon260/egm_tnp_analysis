@@ -136,13 +136,33 @@ if args.mcSig :
 if  args.doFit:
     sampleToFit.dump()
     for ib in range(len(tnpBins['bins'])):
-        if (args.binNumber >= 0 and ib == args.binNumber) or args.binNumber < 0:
+        if args.binNumber < 0:
             if args.altSig:                 
-                tnpRoot.histFitterAltSig(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltSigFit )
+                if ib >= 20 and ib < 30:
+                    tnpRoot.histFitterAltSig(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltSigFit_2X )
+                elif ib >= 30 and ib < 40:
+                    tnpRoot.histFitterAltSig(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltSigFit_3X )
+                else:
+                    tnpRoot.histFitterAltSig(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltSigFit )
+                
             elif args.altBkg:
                 tnpRoot.histFitterAltBkg(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltBkgFit )
             else:
-                tnpRoot.histFitterNominal( sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParNomFit )
+                if ib >= 40 and ib < 50:
+                    tnpRoot.histFitterNominal(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParNomFit_4X )
+                elif ib >= 50 and ib < 60:               
+                    tnpRoot.histFitterNominal(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParNomFit_5X )
+                else:
+                    tnpRoot.histFitterNominal( sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParNomFit )
+
+        ##-- Tune fit by bin --##
+        if (args.binNumber >= 0 and ib == args.binNumber):
+            if args.altSig:                 
+                tnpRoot.histFitterAltSig(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltSigFit_fm)                
+            elif args.altBkg:
+                tnpRoot.histFitterAltBkg(  sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParAltBkgFit_ps1 )
+            else:
+                tnpRoot.histFitterNominal( sampleToFit, tnpBins['bins'][ib], tnpConf.tnpParNomFit_ps1 )
 
     args.doPlot = True
      
@@ -220,8 +240,10 @@ if args.sumUp:
             effis['mcAlt' ][0],
             effis['tagSel'][0],
             )
-        print astr
-        fOut.write( astr + '\n' )
+
+        if max(abs(float(v1Range[0])),abs(float(v1Range[2]))) != 1.566 and min(abs(float(v1Range[0])),abs(float(v1Range[2]))) != 1.444: # remove ECAL-gap region
+            print astr
+            fOut.write( astr + '\n' )
     fOut.close()
 
     print 'Effis saved in file : ',  effFileName
