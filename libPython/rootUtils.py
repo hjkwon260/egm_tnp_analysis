@@ -32,8 +32,8 @@ def getAllEffi( info, bindef ):
         rootfile = rt.TFile( info['mcNominal'], 'read' )
         hP = rootfile.Get('%s_Pass'%bindef['name'])
         hF = rootfile.Get('%s_Fail'%bindef['name'])
-        # bin1 = 1
-        # bin2 = hP.GetXaxis().GetNbins()
+        #bin1 = 1
+        #bin2 = hP.GetXaxis().GetNbins()
         bin1 = 11
         bin2 = 70
         eP = rt.Double(-1.0)
@@ -49,8 +49,8 @@ def getAllEffi( info, bindef ):
         rootfile = rt.TFile( info['tagSel'], 'read' )
         hP = rootfile.Get('%s_Pass'%bindef['name'])
         hF = rootfile.Get('%s_Fail'%bindef['name'])
-        # bin1 = 1
-        # bin2 = hP.GetXaxis().GetNbins()
+      #  bin1 = 1
+      #  bin2 = hP.GetXaxis().GetNbins()
         bin1 = 11
         bin2 = 70
         eP = rt.Double(-1.0)
@@ -66,8 +66,8 @@ def getAllEffi( info, bindef ):
         rootfile = rt.TFile( info['mcAlt'], 'read' )
         hP = rootfile.Get('%s_Pass'%bindef['name'])
         hF = rootfile.Get('%s_Fail'%bindef['name'])
-        # bin1 = 1
-        # bin2 = hP.GetXaxis().GetNbins()
+        #bin1 = 1
+        #bin2 = hP.GetXaxis().GetNbins()
         bin1 = 11
         bin2 = 70
         eP = rt.Double(-1.0)
