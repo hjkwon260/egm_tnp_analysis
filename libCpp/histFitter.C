@@ -29,9 +29,9 @@ public:
   tnpFitter( TH1 *hPass, TH1 *hFail, std::string histname  );
   ~tnpFitter(void) {if( _work != 0 ) delete _work; }
   void setZLineShapes(TH1 *hZPass, TH1 *hZFail );
-  void setWorkspace(std::vector<std::string>);
+  void setWorkspace(std::vector<std::string>, bool isAltSig=false);
   void setOutputFile(TFile *fOut ) {_fOut = fOut;}
-  void fits(bool mcTruth,std::string title = "");
+  void fits(bool mcTruth,std::string title = "", bool isAltSig=false);
   void useMinos(bool minos = true) {_useMinos = minos;}
   void textParForCanvas(RooFitResult *resP, RooFitResult *resF, TPad *p);
   
@@ -101,7 +101,6 @@ tnpFitter::tnpFitter(TH1 *hPass, TH1 *hFail, std::string histname  ) : _useMinos
   
 }
 
-
 void tnpFitter::setZLineShapes(TH1 *hZPass, TH1 *hZFail ) {
   RooDataHist rooPass("hGenZPass","hGenZPass",*_work->var("x"),hZPass);
   RooDataHist rooFail("hGenZFail","hGenZFail",*_work->var("x"),hZFail);
@@ -109,7 +108,7 @@ void tnpFitter::setZLineShapes(TH1 *hZPass, TH1 *hZFail ) {
   _work->import(rooFail) ;  
 }
 
-void tnpFitter::setWorkspace(std::vector<std::string> workspace) {
+void tnpFitter::setWorkspace(std::vector<std::string> workspace, bool isAltSig) {
   for( unsigned icom = 0 ; icom < workspace.size(); ++icom ) {
     _work->factory(workspace[icom].c_str());
   }
@@ -123,11 +122,18 @@ void tnpFitter::setWorkspace(std::vector<std::string> workspace) {
   _work->factory(TString::Format("nSigF[%f,0.5,%f]",_nTotF*0.9,_nTotF*1.5));
   _work->factory(TString::Format("nBkgF[%f,0.5,%f]",_nTotF*0.1,_nTotF*1.5));
   _work->factory("SUM::pdfPass(nSigP*sigPass,nBkgP*bkgPass)");
-  _work->factory("SUM::pdfFail(nSigF*sigFail,nBkgF*bkgFail)");
+  if (isAltSig) {
+    _work->factory(TString::Format("nSigF1[%f,0.5,%f]",_nTotF*0.9,_nTotF*1.5));
+    _work->factory(TString::Format("nSigF2[%f,0.5,%f]",_nTotF*0.1,_nTotF*1.0));
+    _work->factory("SUM::pdfFail(nSigF1*sigFail,nSigF2*sigResFailG, nBkgF*bkgFail)");
+  } 
+  else {
+    _work->factory("SUM::pdfFail(nSigF*sigFail,nBkgF*bkgFail)");
+  }
   _work->Print();			         
 }
 
-void tnpFitter::fits(bool mcTruth,string title) {
+void tnpFitter::fits(bool mcTruth,string title, bool isAltSig) {
 
   cout << " title : " << title << endl;
 
@@ -166,6 +172,12 @@ void tnpFitter::fits(bool mcTruth,string title) {
   RooFitResult* resFail = pdfFail->fitTo(*_work->data("hFail"),Minos(_useMinos),SumW2Error(kTRUE),Save(),Range("fitMassRange"));
   //RooFitResult* resFail = pdfFail->fitTo(*_work->data("hFail"),Minos(_useMinos),SumW2Error(kTRUE),Save());
 
+  if(isAltSig){
+    RooRealVar *nSigF1 = _work->var("nSigF1");
+    RooRealVar *nSigF2 = _work->var("nSigF2");
+    _work->var("nSigF")->setVal(nSigF1->getVal()+nSigF2->getVal());
+    _work->var("nSigF")->setError(sqrt(nSigF1->getError()*nSigF1->getError()+nSigF2->getError()*nSigF2->getError()));
+  }
 
   RooPlot *pPass = _work->var("x")->frame(60,120);
   RooPlot *pFail = _work->var("x")->frame(60,120);
@@ -180,6 +192,7 @@ void tnpFitter::fits(bool mcTruth,string title) {
   _work->data("hFail") ->plotOn( pFail );
   _work->pdf("pdfFail")->plotOn( pFail, LineColor(kRed) );
   _work->pdf("pdfFail")->plotOn( pFail, Components("bkgFail"),LineColor(kBlue),LineStyle(kDashed));
+  // _work->pdf("pdfFail")->plotOn( pFail, Components("sigResFailG"),LineColor(kGreen),LineStyle(kDashed));
   _work->data("hFail") ->plotOn( pFail );
 
   TCanvas c("c","c",1100,450);
@@ -194,12 +207,7 @@ void tnpFitter::fits(bool mcTruth,string title) {
   resPass->Write(TString::Format("%s_resP",_histname_base.c_str()),TObject::kOverwrite);
   resFail->Write(TString::Format("%s_resF",_histname_base.c_str()),TObject::kOverwrite);
 
-  
 }
-
-
-
-
 
 /////// Stupid parameter dumper /////////
 void tnpFitter::textParForCanvas(RooFitResult *resP, RooFitResult *resF,TPad *p) {
